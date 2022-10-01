@@ -7,7 +7,18 @@ app=Flask(__name__)
 #co = cohere.Client('NGFlhn3qAO03wpB8B3I66DW6BTLZbnDSWJXusfpH', '2021-11-08')
 
 co = cohere.Client('NGFlhn3qAO03wpB8B3I66DW6BTLZbnDSWJXusfpH')
-default_settings = {"model":"large", "max_tokens":200}
+#default_settings = {"model":"large", "max_tokens":200}
+default_settings = {"model":'large',
+    "prompt":'{}', 
+    "max_tokens":200,
+    "temperature":0.8,
+    "k":0,
+    "p":1,
+    "frequency_penalty":0,
+    "presence_penalty":0,
+    "stop_sequences":["--"],
+    "return_likelihoods":'NONE'}
+
 text_message_settings = {"model":'large',
         "prompt":'Command: Thank Sid for the gift cards\nEmail: Hey Sid, Thank you so much for the gift cards. I really appreciate it. I hope to see you soon\n--\nCommand: Invoice Nicole $500 for financial modeling\nEmail: Dear Nicole, This is my invoice for $500 for the financial modeling. It was a pleasure to work with you\n--\nCommand: Tell Kiyan that they made it to the next round\nEmail: Hey Kiyan, You\'ve moved forward to the next round of interviews. The team is looking forward to seeing you again\n--\nCommand: Ask Adrien for a coffee chat\nEmail: Hey Adrien, Long time no see! Let\'s catch up and grab coffee. What\'s your schedule look like?\n--\nCommand: {}\nEmail:',
         "max_tokens":100,
@@ -49,11 +60,11 @@ def result_page():
     form_data = request.form
     propositions = ""
     prompt=form_data["Prompt"]
-    settings = pro_email_settings
+    settings = default_settings
     mutated_prompts = [prompt] + generate_mutations(prompt, max_number)
 
-    for id, prompt in enumerate(mutated_prompts):
-        mutated_prompts[id]=[prompt, settings]
+    for id, text in enumerate(mutated_prompts):
+        mutated_prompts[id]=[text, settings]
 
     with Pool(max_number+1) as p:
         results = p.starmap(edit_prompt_and_generate, mutated_prompts)
