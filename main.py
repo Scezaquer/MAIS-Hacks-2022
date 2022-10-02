@@ -2,6 +2,7 @@ import cohere
 from flask import Flask, request, render_template
 from prompt_mutator import *
 from multiprocessing import Pool
+from image_generator import *
 
 app=Flask(__name__)
 #co = cohere.Client('NGFlhn3qAO03wpB8B3I66DW6BTLZbnDSWJXusfpH', '2021-11-08')
@@ -58,34 +59,29 @@ def result_page():
     start = time()
     max_number = 5
     form_data = request.form
+    generator_type = "Images"
     propositions = ""
     prompt=form_data["Prompt"]
     settings = default_settings
     mutated_prompts = [prompt] + generate_mutations(prompt, max_number)
 
-    for id, text in enumerate(mutated_prompts):
-        mutated_prompts[id]=[text, settings]
+    if generator_type == "Text":
+        for id, text in enumerate(mutated_prompts):
+            mutated_prompts[id]=[text, settings]
 
-    with Pool(max_number+1) as p:
-        results = p.starmap(edit_prompt_and_generate, mutated_prompts)
+        with Pool(max_number+1) as p:
+            results = p.starmap(edit_prompt_and_generate, mutated_prompts)
+
+        for id, result in enumerate(results):
+            propositions += f"<p>{mutated_prompts[id][0]} <b>{result}</b></p>"
     
-    for id, result in enumerate(results):
-        propositions += f"<p>{mutated_prompts[id][0]} <b>{result}</b></p>"
+    elif generator_type == "Images":
+        with Pool(max_number+1) as p:
+            results = p.map(generate_image, mutated_prompts)
+        
+        for id, result in enumerate(results):
+            propositions += f'<p>{mutated_prompts[id]} <img src="{result["output_url"]}"></p>\n'
 
-    """for x in options:
-        response = co.generate(
-        model=settings["model"],
-        prompt=settings["prompt"].format(x),
-        max_tokens=settings["max_tokens"],
-        temperature=settings["temperature"],
-        k=settings["k"],
-        p=settings["p"],
-        frequency_penalty=settings["frequency_penalty"],
-        presence_penalty=settings["presence_penalty"],
-        stop_sequences=settings["stop_sequences"],
-        return_likelihoods=settings["return_likelihoods"])
-        #response = co.generate(prompt=x, max_tokens=200)
-        propositions += f"<p>{x} <b>{response.generations[0].text}</b></p>\""""
     print(time()-start)
     return f"<p>{prompt}...</p>\n\n{propositions}"
 
