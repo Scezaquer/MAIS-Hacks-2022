@@ -1,4 +1,3 @@
-from dataclasses import replace
 from googletrans import Translator, LANGUAGES
 from random import choice
 from random import sample
