@@ -80,6 +80,8 @@ def result_page():
         settings = pro_email_settings
         media_form = "Images"
 
+    display_text=""
+    display_images="display:none"
 
     if media_form == "Text":
         for id, text in enumerate(mutated_prompts):
@@ -90,14 +92,16 @@ def result_page():
 
         for id, result in enumerate(results):
             mutated_prompts[id] = mutated_prompts[id][0]
-            propositions += f"<p>{mutated_prompts[id]} <b>{result}</b></p>"
     
     elif media_form == "Images":
+        display_text="display:none"
+        display_images=""
+        #results = [{'output_url':"https://api.deepai.org/job-view-file/ac1bfd4e-6420-4c9d-848c-26fc41aad255/outputs/output.jpg"}, {'output_url':"https://api.deepai.org/job-view-file/ac1bfd4e-6420-4c9d-848c-26fc41aad255/outputs/output.jpg"}, {'output_url':"https://api.deepai.org/job-view-file/ac1bfd4e-6420-4c9d-848c-26fc41aad255/outputs/output.jpg"}, {'output_url':"https://api.deepai.org/job-view-file/ac1bfd4e-6420-4c9d-848c-26fc41aad255/outputs/output.jpg"}, {'output_url':"https://api.deepai.org/job-view-file/ac1bfd4e-6420-4c9d-848c-26fc41aad255/outputs/output.jpg"}, {'output_url':"https://api.deepai.org/job-view-file/ac1bfd4e-6420-4c9d-848c-26fc41aad255/outputs/output.jpg"}]
         with Pool(max_number+1) as p:
             results = p.map(generate_image, mutated_prompts)
         
         for id, result in enumerate(results):
-            propositions += f'<p>{mutated_prompts[id]} <img src="{result["output_url"]}"></p>\n'
+            results[id] = result['output_url']
 
     print(time()-start)
     #return f"<p>{prompt}...</p>\n\n{propositions}"
@@ -115,7 +119,9 @@ def result_page():
     result4=results[3],
     result5=results[4],
     result6=results[5],
-    generator_type=generator_type)
+    generator_type=generator_type,
+    display_text=display_text,
+    display_images=display_images)
 
 def edit_prompt_and_generate(prompt, settings):
     return co.generate(
