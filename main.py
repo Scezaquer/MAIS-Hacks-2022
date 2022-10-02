@@ -52,20 +52,36 @@ def homepage():
     """prompt='Once upon a time in a magical land called'
     response = co.generate(prompt=prompt)
     return f'Prediction: {prompt} <b>{response.generations[0].text}<b>'"""
-    return render_template("temp.html")
+    return render_template("Main page.html")
 
 @app.route('/results/', methods = ["POST"])
 def result_page():
     start = time()
     max_number = 5
     form_data = request.form
-    generator_type = "Images"
     propositions = ""
+    generator_type = form_data['comp-l8qt9kz3']
     prompt=form_data["Prompt"]
-    settings = default_settings
     mutated_prompts = [prompt] + generate_mutations(prompt, max_number)
 
-    if generator_type == "Text":
+    settings = default_settings
+    media_form = "Text"
+
+    if generator_type == "Default":
+        settings = default_settings
+        media_form = "Text"
+    elif generator_type == "Message":
+        settings = text_message_settings
+        media_form = "Text"
+    elif generator_type == "Email":
+        settings = pro_email_settings
+        media_form = "Text"
+    elif generator_type == "Image":
+        settings = pro_email_settings
+        media_form = "Images"
+
+
+    if media_form == "Text":
         for id, text in enumerate(mutated_prompts):
             mutated_prompts[id]=[text, settings]
 
@@ -73,9 +89,10 @@ def result_page():
             results = p.starmap(edit_prompt_and_generate, mutated_prompts)
 
         for id, result in enumerate(results):
-            propositions += f"<p>{mutated_prompts[id][0]} <b>{result}</b></p>"
+            mutated_prompts[id] = mutated_prompts[id][0]
+            propositions += f"<p>{mutated_prompts[id]} <b>{result}</b></p>"
     
-    elif generator_type == "Images":
+    elif media_form == "Images":
         with Pool(max_number+1) as p:
             results = p.map(generate_image, mutated_prompts)
         
@@ -83,7 +100,22 @@ def result_page():
             propositions += f'<p>{mutated_prompts[id]} <img src="{result["output_url"]}"></p>\n'
 
     print(time()-start)
-    return f"<p>{prompt}...</p>\n\n{propositions}"
+    #return f"<p>{prompt}...</p>\n\n{propositions}"
+    return render_template("Post-generating results page.html", 
+    prompt=prompt,
+    prompt1=mutated_prompts[0],
+    prompt2=mutated_prompts[1],
+    prompt3=mutated_prompts[2],
+    prompt4=mutated_prompts[3],
+    prompt5=mutated_prompts[4],
+    prompt6=mutated_prompts[5],
+    result1=results[0],
+    result2=results[1],
+    result3=results[2],
+    result4=results[3],
+    result5=results[4],
+    result6=results[5],
+    generator_type=generator_type)
 
 def edit_prompt_and_generate(prompt, settings):
     return co.generate(
